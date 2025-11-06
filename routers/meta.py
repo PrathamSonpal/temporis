@@ -1,6 +1,10 @@
 from fastapi import APIRouter
-from ..db import get_session
-from ..models import Teacher, Subject, ClassGroup, Room, Timeslot, Assignment
+try:
+    from ..db import get_session
+    from ..models import Teacher, Subject, ClassGroup, Room, Timeslot, Assignment
+except ImportError:
+    from db import get_session
+    from models import Teacher, Subject, ClassGroup, Room, Timeslot, Assignment
 from sqlmodel import select
 
 router = APIRouter(prefix="/meta", tags=["meta"])
