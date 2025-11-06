@@ -1,7 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .db import init_db
-from .routers import meta, seed, solve
+
+# ✅ Works on Railway AND locally
+try:
+    from .db import init_db
+    from .routers import meta, seed, solve
+except ImportError:
+    from db import init_db
+    from routers import meta, seed, solve
 
 app = FastAPI(title="Temporis Timetable API")
 
