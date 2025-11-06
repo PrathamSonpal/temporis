@@ -1,6 +1,10 @@
 from fastapi import APIRouter
-from ..db import get_session, init_db
-from ..models import Teacher, Subject, ClassGroup, Room, Timeslot, ClassSubject
+try:
+    from ..db import get_session, init_db
+    from ..models import Teacher, Subject, ClassGroup, Room, Timeslot, ClassSubject
+except ImportError:
+    from db import get_session, init_db
+    from models import Teacher, Subject, ClassGroup, Room, Timeslot, ClassSubject
 from sqlmodel import select
 
 router = APIRouter(prefix="/init", tags=["init"])
