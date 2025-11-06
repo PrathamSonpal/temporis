@@ -1,5 +1,8 @@
-from sqlmodel import SQLModel, create_engine, Session
-import os
+# works both locally and on Railway
+try:
+    import models
+except ImportError:
+    from . import models
 
 DB_URL = os.getenv("DB_URL", "sqlite:///timetable.db")
 engine = create_engine(DB_URL, echo=False)
