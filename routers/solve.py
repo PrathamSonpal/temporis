@@ -1,9 +1,15 @@
 from fastapi import APIRouter
 from sqlmodel import delete, select
-from ..db import get_session
-from ..models import Assignment
-from ..solver.csp import CSP
-from ..solver.build_problem import load_context, build_variables, build_domains, build_neighbors, consistent_factory
+try:
+    from ..db import get_session
+    from ..models import Assignment
+    from ..solver.csp import CSP
+    from ..solver.build_problem import load_context, build_variables, build_domains, build_neighbors, consistent_factory
+except ImportError:
+    from db import get_session
+    from models import Assignment
+    from solver.csp import CSP
+    from solver.build_problem import load_context, build_variables, build_domains, build_neighbors, consistent_factory
 
 router = APIRouter(prefix="/solve", tags=["solve"])
 
