@@ -1,7 +1,11 @@
 from typing import Dict, List, Tuple
 from sqlmodel import select
-from ..models import ClassGroup, Subject, Teacher, Room, Timeslot, ClassSubject
-from ..db import get_session
+try:
+    from ..models import ClassGroup, Subject, Teacher, Room, Timeslot, ClassSubject
+    from ..db import get_session
+except ImportError:
+    from models import ClassGroup, Subject, Teacher, Room, Timeslot, ClassSubject
+    from db import get_session
 
 Var = Tuple[int,int,int,int]  # (class_id, subject_id, teacher_id, session_index)
 
