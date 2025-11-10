@@ -34,7 +34,18 @@ async function loadMeta(){
   const sel = document.getElementById('classSel');
   sel.innerHTML = meta.classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 }
-async function seed(){ await fetch(API + "/init/seed", {method:"POST"}); await loadMeta(); }
+async function seed() {
+  const res = await fetch(API + "/init/seed", { method: "POST" });
+  console.log("Seed status:", res.status);
+
+  if (res.ok) {
+    alert("✅ Database seeded successfully!");
+    await loadMeta();   // ⬅ Load metadata right after seeding
+  } else {
+    alert("❌ Seed failed");
+  }
+}
+
 async function solve(){ await fetch(API + "/solve", {method:"POST"}); await draw(); }
 function findTimeslot(day, slot_index){ return meta.timeslots.find(t => t.day === day && t.slot_index === slot_index); }
 function getAssignmentsFor(classId){ return fetch(`${API}/meta/timetable?view=class&id=${classId}`).then(r=>r.json()); }
