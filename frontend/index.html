@@ -26,61 +26,116 @@
 const API = "https://temporis.up.railway.app";
 const days = ["Mon","Tue","Wed","Thu","Fri"];
 const periods = [1,2,3,4,5,6];
+
 let meta = null;
 
 async function loadMeta(){
   const res = await fetch(API + "/meta");
   meta = await res.json();
+  // populate class dropdown
   const sel = document.getElementById('classSel');
-  sel.innerHTML = meta.classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  sel.innerHTML = (meta.classes || []).map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 }
-async function seed() {
-  const res = await fetch(API + "/init/seed", { method: "POST" });
-  console.log("Seed status:", res.status);
 
-  if (res.ok) {
-    alert("✅ Database seeded successfully!");
-    await loadMeta();   // ⬅ Load metadata right after seeding
-  } else {
-    alert("❌ Seed failed");
+async function seed(){
+  try {
+    const r = await fetch(API + "/init/seed", { method:"POST" });
+    if(!r.ok) throw new Error("Seed failed: " + r.status);
+    await loadMeta(); // refresh meta after seed
+    alert("Seeded ✅");
+  } catch (e) {
+    console.error(e);
+    alert("Seed error: " + e.message);
   }
 }
 
-async function solve(){ await fetch(API + "/solve", {method:"POST"}); await draw(); }
-function findTimeslot(day, slot_index){ return meta.timeslots.find(t => t.day === day && t.slot_index === slot_index); }
-function getAssignmentsFor(classId){ return fetch(`${API}/meta/timetable?view=class&id=${classId}`).then(r=>r.json()); }
+async function solve(){
+  try {
+    const r = await fetch(API + "/solve", { method:"POST" });
+    if(!r.ok) throw new Error("Solve failed: " + r.status);
+    alert("Solved ✅");
+    await draw();
+  } catch (e) {
+    console.error(e);
+    alert("Solve error: " + e.message);
+  }
+}
+
+function findTimeslot(day, slot_index){
+  if(!meta || !meta.timeslots) return undefined;
+  return meta.timeslots.find(t => t.day === day && Number(t.slot_index) === Number(slot_index));
+}
+
+function getAssignmentsFor(classId){
+  return fetch(`${API}/meta/timetable?view=class&id=${classId}`).then(r=>r.json());
+}
 
 async function draw(){
+  // ensure meta loaded
   if(!meta) await loadMeta();
-  const classId = document.getElementById('classSel').value || meta.classes[0].id;
+
+  const sel = document.getElementById('classSel');
+  const classId = (sel && sel.value) ? Number(sel.value) : (meta.classes?.[0]?.id ?? null);
+  if(!classId){
+    console.warn("No class available yet. Did seeding run?");
+    return;
+  }
+
   const data = await getAssignmentsFor(classId);
-  const grid = document.getElementById('grid'); grid.innerHTML = "";
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = "";
+
+  // header
   grid.appendChild(cell("Day/Period", true));
   periods.forEach(p => grid.appendChild(cell("P"+p, true)));
+
   for(const d of days){
     grid.appendChild(cell(d, true));
     for(const p of periods){
       const slot = findTimeslot(d, p);
-      const items = data.assignments.filter(a => a.timeslot_id === slot.id);
-      const div = document.createElement('div'); div.className = 'cell';
+
+      // guard if slot not found
+      if(!slot){
+        console.warn("Missing timeslot for", d, p);
+        grid.appendChild(cell("—", false));
+        continue;
+      }
+
+      const items = (data.assignments || []).filter(a => a.timeslot_id === slot.id);
+      const div = document.createElement('div');
+      div.className = 'cell';
+
       if(items.length){
         const i = items[0];
-        const sub = meta.subjects.find(s=>s.id===i.subject_id);
-        const teacher = meta.teachers.find(t=>t.id===i.teacher_id);
-        const room = meta.rooms.find(r=>r.id===i.room_id);
-        div.innerHTML = `<div><span class="badge text-bg-primary badge-sub">${sub.code}</span></div>
-                         <div class="small">${sub.name}</div>
-                         <div class="text-muted small">${teacher.code} • ${room.name}</div>`;
-      } else { div.innerHTML = `<div class="text-muted small">—</div>`; }
+        const sub = (meta.subjects || []).find(s=>s.id===i.subject_id);
+        const teacher = (meta.teachers || []).find(t=>t.id===i.teacher_id);
+        const room = (meta.rooms || []).find(r=>r.id===i.room_id);
+        div.innerHTML = `<div><span class="badge text-bg-primary badge-sub">${sub?.code ?? ""}</span></div>
+                         <div class="small">${sub?.name ?? ""}</div>
+                         <div class="text-muted small">${teacher?.code ?? ""} • ${room?.name ?? ""}</div>`;
+      } else {
+        div.innerHTML = `<div class="text-muted small">—</div>`;
+      }
       grid.appendChild(div);
     }
   }
 }
-function cell(text, head=false){ const d=document.createElement('div'); d.className='cell'+(head?' head':''); d.textContent=text; return d; }
+
+function cell(text, head=false){
+  const d = document.createElement('div');
+  d.className = 'cell' + (head?' head':'');
+  d.textContent = text;
+  return d;
+}
+
 document.getElementById('seed').onclick = seed;
 document.getElementById('solve').onclick = solve;
 document.getElementById('classSel').onchange = draw;
+
+// initial load
 loadMeta().then(draw);
 </script>
+
 </body>
 </html>
