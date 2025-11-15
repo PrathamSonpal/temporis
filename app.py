@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from routers import admin  # after other imports
+app.include_router(admin.router)
 
 # ✅ Works on Railway AND locally
 try:
