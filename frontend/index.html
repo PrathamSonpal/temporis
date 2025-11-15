@@ -22,6 +22,53 @@
     </div>
     <div id="grid" class="grid"></div>
   </div>
+
+  <div class="card p-3 mt-4">
+    <h5>Admin — Add Data</h5>
+    <div class="row g-2">
+      <div class="col-auto">
+        <input id="teacher_name" placeholder="Teacher name" class="form-control" />
+      </div>
+      <div class="col-auto">
+        <input id="teacher_code" placeholder="Teacher code" class="form-control" />
+      </div>
+      <div class="col-auto">
+        <button id="addTeacherBtn" class="btn btn-outline-primary">Add Teacher</button>
+      </div>
+    </div>
+  
+    <div class="row g-2 mt-2">
+      <div class="col-auto">
+        <input id="subject_name" placeholder="Subject name" class="form-control" />
+      </div>
+      <div class="col-auto">
+        <input id="subject_code" placeholder="Subject code" class="form-control" />
+      </div>
+      <div class="col-auto">
+        <select id="subject_type" class="form-select">
+          <option value="theory">theory</option>
+          <option value="lab">lab</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <button id="addSubjectBtn" class="btn btn-outline-primary">Add Subject</button>
+      </div>
+    </div>
+  
+    <div class="row g-2 mt-3">
+      <div class="col-auto">
+        <input id="csvFile" type="file" accept=".csv" class="form-control" />
+      </div>
+      <div class="col-auto">
+        <button id="uploadCsvBtn" class="btn btn-outline-success">Upload CSV</button>
+      </div>
+      <div class="col-auto">
+        <small class="text-muted">Use the CSV template (see help)</small>
+      </div>
+    </div>
+    <div id="adminResult" class="mt-2"></div>
+  </div>
+  
 <script>
 const API = "https://temporis.up.railway.app";
 const days = ["Mon","Tue","Wed","Thu","Fri"];
@@ -132,6 +179,42 @@ function cell(text, head=false){
 document.getElementById('seed').onclick = seed;
 document.getElementById('solve').onclick = solve;
 document.getElementById('classSel').onchange = draw;
+
+document.getElementById('addTeacherBtn').onclick = async () => {
+  const name = document.getElementById('teacher_name').value;
+  const code = document.getElementById('teacher_code').value;
+  const fd = new FormData();
+  fd.append('name', name); fd.append('code', code);
+  const res = await fetch(API + '/admin/teacher', { method:'POST', body: fd });
+  const j = await res.json();
+  document.getElementById('adminResult').textContent = JSON.stringify(j);
+  await loadMeta(); // refresh UI
+};
+
+document.getElementById('addSubjectBtn').onclick = async () => {
+  const name = document.getElementById('subject_name').value;
+  const code = document.getElementById('subject_code').value;
+  const type = document.getElementById('subject_type').value;
+  const fd = new FormData();
+  fd.append('name', name); fd.append('code', code); fd.append('type', type);
+  const res = await fetch(API + '/admin/subject', { method:'POST', body: fd });
+  const j = await res.json();
+  document.getElementById('adminResult').textContent = JSON.stringify(j);
+  await loadMeta();
+};
+
+document.getElementById('uploadCsvBtn').onclick = async () => {
+  const fileInput = document.getElementById('csvFile');
+  if(!fileInput.files.length) { alert('Choose a CSV file'); return; }
+  const f = fileInput.files[0];
+  const fd = new FormData();
+  fd.append('file', f);
+  document.getElementById('adminResult').textContent = 'Uploading...';
+  const res = await fetch(API + '/admin/upload_csv', { method: 'POST', body: fd });
+  const j = await res.json();
+  document.getElementById('adminResult').textContent = JSON.stringify(j, null, 2);
+  await loadMeta();
+};
 
 // initial load
 loadMeta().then(draw);
